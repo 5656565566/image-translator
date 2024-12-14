@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "manga-translator"
+version = "0.1.0"
+description = ""
+authors = ["5656565566 <2393963330@qq.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+easyocr = "^1.7.2"
+transformers = "^4.46.3"
+jaconv = "^0.4.0"
+pillow = "^11.0.0"
+fugashi = "^1.4.0"
+unidic-lite = "^1.0.8"
+torchvision = { version = "^0.20.1", source = "pytorch-cu124" }
+torch = { version = "^2.5.1", source = "pytorch-cu124" }
+onnx = "^1.17.0"
+onnxruntime = "^1.20.1"
+loguru = "^0.7.2"
+
+imgviz = "^1.7.6"
+matplotlib = "^3.9.3"
+httpx = "^0.28.1"
+httpcore = {extras = ["asyncio"], version = "^1.0.7"}
+h11 = "^0.14.0"
+
+[[tool.poetry.source]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "tsinghua"
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+priority = "default"
