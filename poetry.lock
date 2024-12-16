@@ -651,22 +651,6 @@ url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
 reference = "tsinghua"
 
 [[package]]
-name = "imgviz"
-version = "1.7.6"
-description = ""
-optional = false
-python-versions = "*"
-files = [
-    {file = "imgviz-1.7.6-py3-none-any.whl", hash = "sha256:6afccf52e66ad49032ca748f86580dca8c5fa8462f23836da8fe2ed2249fc4a9"},
-    {file = "imgviz-1.7.6.tar.gz", hash = "sha256:4708429c90a3220ac39fa8ad330908fdbdec4fffca01b514a7f581241a536107"},
-]
-
-[package.source]
-type = "legacy"
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
-reference = "tsinghua"
-
-[[package]]
 name = "jaconv"
 version = "0.4.0"
 description = "Pure-Python Japanese character interconverter for Hiragana, Katakana, Hankaku, Zenkaku and more"
@@ -2790,4 +2774,4 @@ reference = "tsinghua"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "766414a8c93da904057afbc99e8ecd87fd82d681da437f4bbd45224fd2c61b8b"
+content-hash = "9042738993e87eaf7bee12f1e54e79cea5de05b85ed4f1fcedf25b9fd83cf064"

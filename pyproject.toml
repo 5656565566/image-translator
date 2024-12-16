@@ -19,7 +19,6 @@ onnx = "^1.17.0"
 onnxruntime = "^1.20.1"
 loguru = "^0.7.2"
 
-imgviz = "^1.7.6"
 matplotlib = "^3.9.3"
 httpx = "^0.28.1"
 httpcore = {extras = ["asyncio"], version = "^1.0.7"}

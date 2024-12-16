@@ -1,1 +1,0 @@
-# https://huggingface.co/kha-white/manga-ocr-base
