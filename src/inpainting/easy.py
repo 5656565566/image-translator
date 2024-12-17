@@ -1,11 +1,12 @@
 import numpy as np
-
 from PIL import Image
 
 def easy(image: np.ndarray, masks: np.ndarray):
+    image_copy = image.copy()
     
-    output_image = (image[0].transpose(1, 2, 0) * 255).astype(np.uint8)
-    combined_mask = np.logical_or.reduce(masks)
-    output_image[combined_mask] = [255, 255, 255]
+    if image_copy.ndim == 3:
+        image_copy[masks != 0] = [255, 255, 255]
+    else:
+        image_copy[masks != 0] = 255
     
-    return Image.fromarray(output_image)
+    return Image.fromarray(image_copy)

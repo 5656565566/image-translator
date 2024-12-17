@@ -1,6 +1,7 @@
 from easyocr import Reader
 
-class Easyocr:
+
+class EasyOCR:
     def __init__(
         self,
         languages=["en"],
@@ -22,9 +23,9 @@ class Easyocr:
 
 
 if __name__ == "__main__":
-    ocr = Easyocr(languages=["ja", "en"])
+    ocr = EasyOCR(languages=["ja", "en"])
 
     image_path = "test_image/1.png"
     result = ocr(image_path)
-    
+
     print(result)

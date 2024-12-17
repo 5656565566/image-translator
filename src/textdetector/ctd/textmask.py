@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from textblock import TextBlock
-from imgproc_utils import expand_textwindow, union_area
+from .textblock import TextBlock
+from .imgproc_utils import expand_textwindow, union_area
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)

@@ -23,6 +23,7 @@ matplotlib = "^3.9.3"
 httpx = "^0.28.1"
 httpcore = {extras = ["asyncio"], version = "^1.0.7"}
 h11 = "^0.14.0"
+deep-translator = "^1.11.4"
 
 [[tool.poetry.source]]
 name = "pytorch-cu124"

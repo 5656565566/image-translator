@@ -46,9 +46,7 @@ class EasyTextEmbedder:
 
         return max_font_size
 
-    def embed_text(
-        self, texts: list, image: Image, bounding_boxes: list
-    ) -> Image:
+    def embed_text(self, texts: list, image: Image, bounding_boxes: list) -> Image:
         """
         在图像的 bounding_boxes 中嵌入文本
         """
@@ -71,18 +69,36 @@ class EasyTextEmbedder:
             font = ImageFont.truetype(self.font_path, size=font_size)
 
             if vertical:
-                # 竖排逻辑：按列排列
+                # 竖排逻辑：按列排列，从右侧开始
                 char_bbox = font.getbbox("测")
                 char_height = char_bbox[3] - char_bbox[1]
                 char_width = char_bbox[2] - char_bbox[0]
                 max_chars_per_column = (y2 - y1) // char_height
-                current_x, current_y = x1, y1
+                current_x, current_y = x2, y1  # 设置为右侧起始位置
 
                 for i, char in enumerate(text):
                     if current_y + char_height > y2:
-                        current_x += char_width  # 换列
+                        current_x -= char_width  # 换列，向左移动
                         current_y = y1
-                    draw.text((current_x, current_y), char, fill="black", font=font)
+
+                    if char in [".", "—", "~", "~"]:
+                        # 创建透明背景的临时图片
+                        temp_image = Image.new('RGBA', (100, 100), color=(0, 0, 0, 0))  # 透明背景
+                        temp_draw = ImageDraw.Draw(temp_image)
+                        
+                        temp_draw.text((0, 0), char, fill="black", font=font)
+                        
+                        # 旋转字符图像
+                        rotated_image = temp_image.rotate(90, expand=True)
+                        
+                        new_width, new_height = rotated_image.size
+                        new_x = current_x - (new_width - 100) // 2
+                        new_y = current_y - (new_height - 100) // 2
+                        
+                        # 确保坐标为整数
+                        image.paste(rotated_image, (int(new_x), int(new_y * 0.8)), rotated_image)
+                    else:
+                        draw.text((current_x, current_y), char, fill="black", font=font)
                     current_y += char_height
             else:
                 # 横排逻辑：按行排列
@@ -100,6 +116,7 @@ class EasyTextEmbedder:
                     current_x += char_width
 
         return image
+
 
 
 if __name__ == "__main__":

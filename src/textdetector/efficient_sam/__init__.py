@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from pathlib import Path
 
-from easy_ocr import EasyOcr
+from .easy_ocr import EasyOcr
 
 current_file = Path(__file__)
 parent_directory = current_file.parent

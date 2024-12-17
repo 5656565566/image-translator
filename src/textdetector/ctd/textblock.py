@@ -5,7 +5,7 @@ import cv2
 
 from shapely.geometry import Polygon
 
-from imgproc_utils import union_area, xywh2xyxypoly, rotate_polygons
+from .imgproc_utils import union_area, xywh2xyxypoly, rotate_polygons
 
 LANG_list = ["eng", "ja", "unknown"]
 LANGCLS2IDX = {"eng": 0, "ja": 1, "unknown": 2}

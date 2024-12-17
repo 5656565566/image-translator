@@ -2,14 +2,17 @@ import numpy as np
 import cv2
 import torch
 
+from io import BytesIO
 from typing import Union
 from pathlib import Path
 
-from basemodel import TextDetBase, TextDetBaseDNN
-from db_utils import SegDetectorRepresenter
-from yolov5_utils import non_max_suppression
-from textblock import group_output
-from textmask import refine_mask, refine_undetected_mask
+from .basemodel import TextDetBase, TextDetBaseDNN
+from .db_utils import SegDetectorRepresenter
+from .yolov5_utils import non_max_suppression
+from .textblock import group_output
+from .textmask import refine_mask, refine_undetected_mask
+
+from cuda_test import cuda_test
 
 current_file = Path(__file__)
 parent_directory = current_file.parent
@@ -99,7 +102,6 @@ class TextDetector:
         self,
         input_size=1024,
         model_path = parent_directory / "model" / "comictextdetector.pt",
-        device="cpu",
         half=False,
         nms_thresh=0.35,
         conf_thresh=0.4,
@@ -107,8 +109,10 @@ class TextDetector:
     ):
         super(TextDetector, self).__init__()
 
+        device = "cuda" if cuda_test() else "cpu"
+    
         if device == "cpu":
-            model_path = parent_directory / "model" / "comictextdetector.onnx"
+            model_path = parent_directory / "model" / "comictextdetector.pt.onnx"
         
         if Path(model_path).suffix == ".onnx":
             self.model = cv2.dnn.readNetFromONNX(model_path)
@@ -128,7 +132,15 @@ class TextDetector:
         self.seg_rep = SegDetectorRepresenter(thresh=0.3)
 
     @torch.no_grad()
-    def __call__(self, img, refine_mode=REFINEMASK_INPAINT, keep_undetected_mask=False):
+    def predict(self, img, refine_mode=REFINEMASK_INPAINT, keep_undetected_mask=False):
+
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        img_bytes = buffer.getvalue()
+        
+        img_array = np.frombuffer(np.array(img_bytes), dtype=np.uint8)
+        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
         img_in, ratio, dw, dh = preprocess_img(img, input_size=self.input_size, device=self.device, half=self.half, to_tensor=self.backend=='torch')
         im_h, im_w = img.shape[:2]
 
@@ -178,12 +190,10 @@ if __name__ == "__main__":
     
     imread = lambda imgpath, read_type=cv2.IMREAD_COLOR: cv2.imdecode(np.fromfile(imgpath, dtype=np.uint8), read_type)
     
-    cuda = torch.cuda.is_available()
-    device = "cuda" if cuda else "cpu"
-    model = TextDetector(input_size=1024, device=device, act="leaky")
+    model = TextDetector(input_size=1024, act="leaky")
     
-    image = imread("1.png")
+    image = imread("test_image/1.png")
     
-    mask, mask_refined, blk_list = model(image, refine_mode=REFINEMASK_ANNOTATION, keep_undetected_mask=True)
+    mask, mask_refined, blk_list = model.predict(image, refine_mode=REFINEMASK_ANNOTATION, keep_undetected_mask=True)
     
     imwrite("1-mask", mask_refined)

@@ -326,45 +326,53 @@ class LamaFourier:
         return self
         
 
-    def __call__(self, image: np.ndarray, mask: np.ndarray, rel_pos=None, direct=None):
+    def predict(self, image: np.ndarray, mask: np.ndarray, rel_pos=None, direct=None):
+        """
+        image: 输入图像，NumPy 数组，形状为 (H, W, C)
+        mask: 遮罩，NumPy 数组，形状为 (H, W)
+        """
+        # 转为 PyTorch 张量，并归一化
+        img_torch = torch.from_numpy(image).permute(2, 0, 1).unsqueeze_(0).float() / 255.0  # (1, C, H, W)
+        mask_torch = torch.from_numpy(mask).unsqueeze_(0).unsqueeze_(0).float() / 255.0  # (1, 1, H, W)
 
-        img_torch = torch.from_numpy(image).permute(2, 0, 1).unsqueeze_(0).float() / 255.0
-        mask_torch = torch.from_numpy(mask).unsqueeze_(0).unsqueeze_(0).float() / 255.0
-        
         if self.device != "cpu":
             img_torch = img_torch.to(self.device)
             mask_torch = mask_torch.to(self.device)
-        
+
         if self.mpe is not None:
             rel_pos, direct = self.mpe(rel_pos, direct)
         else:
             rel_pos, direct = None, None
-        predicted_img = self.generator(img_torch, mask_torch, rel_pos, direct)
 
+        predicted_img = self.generator(img_torch, mask_torch, rel_pos, direct)  # (1, C, H, W)
+
+        # 修复 inpaint_only 的广播问题
         if self.inpaint_only:
-            return predicted_img * mask_torch + (1 - mask_torch) * image
+            # 确保所有操作都是在 PyTorch 张量上
+            composite_img = predicted_img * mask_torch + (1 - mask_torch) * img_torch
+            return composite_img.squeeze(0).permute(1, 2, 0).cpu().detach().numpy()  # 转回 NumPy 格式
 
         if self.forward_discriminator:
             predicted_img = predicted_img.detach()
             img_torch.requires_grad = True
 
-
         discr_real_pred, discr_real_features = self.discriminator(img_torch)
         discr_fake_pred, discr_fake_features = self.discriminator(predicted_img)
-    
+
         if self.forward_discriminator:
-            return  {
+            return {
                 "predicted_img": predicted_img, 
                 "discr_real_pred": discr_real_pred, 
-                "discr_fake_pred":discr_fake_pred
+                "discr_fake_pred": discr_fake_pred
             }
         else:
-            return  {
+            return {
                 "predicted_img": predicted_img, 
                 "discr_real_features": discr_real_features, 
                 "discr_fake_features": discr_fake_features, 
                 "discr_fake_pred": discr_fake_pred
             }
+
 
     def load_masked_position_encoding(self, mask):
         mask = (mask * 255).astype(np.uint8)
@@ -438,12 +446,12 @@ parent_directory = current_file.parent
 
 def load_lama_mpe(
     device,
-    model_path = parent_directory / "model" / "lama_large_512px.ckpt",
-    use_mpe=True,
+    model_path = parent_directory / "model" / "lama_mpe.ckpt",
+    use_mpe=False,
     large_arch: bool = False
 ) -> LamaFourier:
-    model = LamaFourier(build_discriminator=False, use_mpe=use_mpe, large_arch=large_arch)
-    sd = torch.load(model_path, map_location = "cpu")
+    model = LamaFourier(build_discriminator=False, use_mpe=use_mpe, large_arch=large_arch, device=device)
+    sd = torch.load(model_path, map_location = device)
     model.generator.load_state_dict(sd["gen_state_dict"])
     if use_mpe:
         model.mpe.load_state_dict(sd["str_state_dict"])

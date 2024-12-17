@@ -2,37 +2,23 @@ from ocr import OCR
 from inpainting import Inpainting
 from rendering import TextEmbedder
 from translators import Translator
+from textdetector import Textdetector
 
 from PIL import Image
 from pathlib import Path
 
+import numpy as np
 import os
 
-ocr = OCR()
-inpainting = Inpainting()
-textEmbedder = TextEmbedder()
-translator = Translator("http://192.168.100.113:8080/v1/chat/completions")
+textDetector = Textdetector(name= "ctd")
+ocr = OCR(name= "MangaOCR", languages="ja")
+inpainting = Inpainting(name= "easy", device = "cuda")
+textEmbedder = TextEmbedder(name= "easy")
+translator = Translator(name= "SakuraTranslator", api_url= "http://192.168.100.113:8080/v1/chat/completions")
 
 def process_images(input_folder, test_folder):
     if not os.path.exists(test_folder):
         os.makedirs(test_folder)
-    
-    ocr_manga_test = test_folder / "ocr"
-    inpainting_test = test_folder / "inpainting"
-    rendering_test = test_folder / "rendering"
-    output_test = test_folder / "output"
-    
-    if not os.path.exists(ocr_manga_test):
-        os.makedirs(ocr_manga_test)
-        
-    if not os.path.exists(inpainting_test):
-        os.makedirs(inpainting_test)
-        
-    if not os.path.exists(rendering_test):
-        os.makedirs(rendering_test)
-        
-    if not os.path.exists(output_test):
-        os.makedirs(output_test)
 
     for root, _, files in os.walk(input_folder):
         for file in files:
@@ -40,29 +26,43 @@ def process_images(input_folder, test_folder):
                 
                 image_path = Path(root) / file
                 
-                image = Image.open(image_path)
-                
-                if not os.path.exists(ocr_manga_test / image_path.parent.name):
-                    os.makedirs(ocr_manga_test / image_path.parent.name)
-                
-                originals, bboxs = ocr(image, ocr_manga_test / image_path.parent.name / file)
-                
-                text = "\n".join(originals)
-                texts = translator(text)
+                print(f"正在找字 {image_path.parent.name} / {file}")
                 
                 image = Image.open(image_path)
-                output_image, bounding_boxes = inpainting(image, bboxs)
                 
-                if not os.path.exists(inpainting_test / image_path.parent.name):
-                    os.makedirs(inpainting_test / image_path.parent.name)
+                mask, bounding_boxes = textDetector(image)
                 
-                output_image.save(inpainting_test / image_path.parent.name / file)
+                croped_images = []
                 
-                if not os.path.exists(output_test / image_path.parent.name):
-                    os.makedirs(output_test / image_path.parent.name)
+                print(f"正在OCR {image_path.parent.name} / {file}")
                 
-                result_image = textEmbedder(texts, output_image, bounding_boxes)
-                result_image.save(output_test / image_path.parent.name / file)
+                for bounding_boxe in bounding_boxes:
+                    croped_images.append(image.crop(bounding_boxe))
+                
+                source_text, bbox = ocr(bounding_boxes, croped_images)
+                
+                if len(croped_images) != len(source_text):
+                    print("OCR 结果与文本框的数量没有对应 !")
+                
+                texts = translator(source_text)
+                
+                if len(croped_images) != len(texts):
+                    print("翻译结果与文本框的数量没有对应 !")
+                
+                print(f"正在翻译 {image_path.parent.name} / {file}")
+                
+                predicted_img = inpainting(np.array(image), mask)
+                
+                print(f"正在修复 {image_path.parent.name} / {file}")
+                
+                result_image = textEmbedder(texts, predicted_img, bbox)
+                
+                print(f"正在嵌字 {image_path.parent.name} / {file}")
+                
+                if not os.path.exists(test_folder / image_path.parent.name):
+                    os.makedirs(test_folder / image_path.parent.name)
+                
+                result_image.save(test_folder / image_path.parent.name / file)
                 
                 
 if __name__ == "__main__":
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     current_file = Path(__file__)
     path = current_file.parent.parent
 
-    input_folder = path / "man"
+    input_folder = path / "test_image"
     test_folder = path / "test"
     
     process_images(input_folder, test_folder)

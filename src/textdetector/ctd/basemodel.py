@@ -3,10 +3,10 @@ import cv2
 import copy
 import torch.nn as nn
 
-from yolov5.yolo import load_yolov5_ckpt
-from yolov5.common import C3, Conv
-from weight_init import init_weights
-from yolov5_utils import fuse_conv_and_bn
+from .yolov5.yolo import load_yolov5_ckpt
+from .yolov5.common import C3, Conv
+from .weight_init import init_weights
+from .yolov5_utils import fuse_conv_and_bn
 
 TEXTDET_MASK = 0
 TEXTDET_DET = 1
